@@ -12,7 +12,7 @@ software components installed:
   - Ruby (>= 1.8.7)
   - bundler for Ruby: https://github.com/carlhuda/bundler
 
-### Instructions for running the Sidekiq plugin agent
+### Instructions for running the Elastic plugin agent
 
 1. run `bundle install` to install required gems
 2. Copy `config/newrelic_plugin.yml.example` to `config/newrelic_plugin.yml`
