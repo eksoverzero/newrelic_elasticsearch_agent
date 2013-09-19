@@ -1,9 +1,8 @@
 #!/usr/bin/env ruby
-#
-# Copyright (C) Nginx, Inc.
 
 require 'rubygems'
 require 'daemons'
 require 'bundler/setup'
 
-Daemons.run(File.dirname(__FILE__) + '/newrelic_nginx_agent')
+Daemons.run(File.dirname(__FILE__) + '/newrelic_elasticsearch_agent')
+
