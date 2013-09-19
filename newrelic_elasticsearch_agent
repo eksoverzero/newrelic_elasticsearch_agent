@@ -19,9 +19,14 @@ module ElasticsearchStatsAgent
     agent_human_labels('ElasticSearch') { name }
 
     def setup_metrics
-      @requests = NewRelic::Processor::EpochCounter.new
-      @accepts = NewRelic::Processor::EpochCounter.new
-      @drops = NewRelic::Processor::EpochCounter.new
+      @indexing_index_rate = NewRelic::Processor::EpochCounter.new
+      @indexing_delete_rate = NewRelic::Processor::EpochCounter.new
+      @get_rate = NewRelic::Processor::EpochCounter.new
+      @get_exists_rate = NewRelic::Processor::EpochCounter.new
+      @get_missing_rate = NewRelic::Processor::EpochCounter.new
+      @search_query_rate = NewRelic::Processor::EpochCounter.new
+      @search_fetch_rate = NewRelic::Processor::EpochCounter.new
+
     end
 
     def poll_cycle
@@ -34,30 +39,36 @@ module ElasticsearchStatsAgent
       report_metric "Documents/Deleted",        "Documents",      total["docs"]["deleted"]
 
       report_metric "Store/Size",               "Documents",      total["store"]["size_in_bytes"]
-      report_metric "Store/Throttle",           "time",           total["store"]["throttle_time_in_millis"]
+      report_metric "Store/Throttle",           "Milliseconds",   total["store"]["throttle_time_in_millis"]
 
-      report_metric "Indexing/Index/Current",   "Indexes",        total["indexing"]["index_current"]
       report_metric "Indexing/Index/Total",     "Indexes",        total["indexing"]["index_total"]
-      report_metric "Indexing/Index/Time",      "time",           total["indexing"]["index_time_in_millis"]
-      report_metric "Indexing/Delete/Current",  "Deletes",        total["indexing"]["delete_current"]
+      report_metric "Indexing/Index/Current",   "Indexes",        total["indexing"]["index_current"]
+      report_metric "Indexing/Index/Time",      "Milliseconds",   total["indexing"]["index_time_in_millis"]
+      report_metric "Indexing/Index/Rate",      "Indexes/sec",    @indexing_index_rate.process(total["indexing"]["index_total"])
       report_metric "Indexing/Delete/Total",    "Deletes",        total["indexing"]["delete_total"]
-      report_metric "Indexing/Delete/Time",     "time",           total["indexing"]["delete_time_in_millis"]
+      report_metric "Indexing/Delete/Current",  "Deletes",        total["indexing"]["delete_current"]
+      report_metric "Indexing/Delete/Time",     "Milliseconds",   total["indexing"]["delete_time_in_millis"]
+      report_metric "Indexing/Delete/Rate",     "Deletes/sec",    @indexing_delete_rate.process(total["indexing"]["delete_total"])
 
-      report_metric "Get/Current",              "Queries",        total["get"]["current"]
       report_metric "Get/Total",                "Queries",        total["get"]["total"]
-      report_metric "Get/Time",                 "time",           total["get"]["time_in_millis"]
+      report_metric "Get/Current",              "Queries",        total["get"]["current"]
+      report_metric "Get/Time",                 "Milliseconds",   total["get"]["time_in_millis"]
+      report_metric "Get/Rate",                 "Queries/sec",    @get_rate.process(total["get"]["total"])
       report_metric "Get/Exists/Total",         "Exists",         total["get"]["exists_total"]
-      report_metric "Get/Exists/Time",          "time",           total["get"]["exists_time_in_millis"]
+      report_metric "Get/Exists/Time",          "Milliseconds",   total["get"]["exists_time_in_millis"]
+      report_metric "Get/Exists/Rate",          "Exists/sec",     @get_exists_rate.process(total["get"]["exists_total"])
       report_metric "Get/Missing/Total",        "Missing",        total["get"]["missing_total"]
-      report_metric "Get/Missing/Time",         "time",           total["get"]["missing_time_in_millis"]
+      report_metric "Get/Missing/Time",         "Milliseconds",   total["get"]["missing_time_in_millis"]
+      report_metric "Get/Missing/Rate",         "Missing/sec",    @get_missing_rate.process(total["get"]["missing_total"])
 
-      report_metric "Search/Query/Current",     "Queries",        total["search"]["query_current"]
       report_metric "Search/Query/Total",       "Queries",        total["search"]["query_total"]
-      report_metric "Search/Query/Time",        "time",           total["search"]["query_time_in_millis"]
-      report_metric "Search/Fetch/Current",     "Fetches",        total["search"]["fetch_current"]
+      report_metric "Search/Query/Current",     "Queries",        total["search"]["query_current"]
+      report_metric "Search/Query/Time",        "Milliseconds",   total["search"]["query_time_in_millis"]
+      report_metric "Search/Query/Rate",        "Queries/sec",    @search_query_rate.process(total["search"]["query_total"])
       report_metric "Search/Fetch/Total",       "Fetches",        total["search"]["fetch_total"]
-      report_metric "Search/Fetch/Time",        "time",           total["search"]["fetch_time_in_millis"]
-
+      report_metric "Search/Fetch/Current",     "Fetches",        total["search"]["fetch_current"]
+      report_metric "Search/Fetch/Time",        "Milliseconds",   total["search"]["fetch_time_in_millis"]
+      report_metric "Search/Fetch/Rate",        "Fetches/sec",    @search_fetch_rate.process(total["search"]["fetch_total"])
     end
 
     private
