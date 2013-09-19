@@ -1,7 +1,6 @@
 GEM
   remote: http://rubygems.org/
   specs:
-    awesome_print (1.1.0)
     daemons (1.1.9)
     json (1.8.0)
     newrelic_plugin (1.2.1)
@@ -11,6 +10,5 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  awesome_print
   daemons
   newrelic_plugin
