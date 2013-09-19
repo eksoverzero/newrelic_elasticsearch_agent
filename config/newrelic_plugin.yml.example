@@ -13,15 +13,9 @@ newrelic:
 # Agent Configuration, describe your nginx instances here
 #
 agents:
-  nginx_status_agent:
+  elasticsearch_stats_agent:
     -
-      instance_name: localhost
-      status_url: http://localhost/nginx_stub_status
-#      http_user: status
-#      http_pass: status_pass
-#    -
-#      instance_name: example.org
-#      status_url: http://example.org/status
-#    -
-#      instance_name: example.com
-#      status_url: http://example.com/status
+      name: "local"
+      index: "index name"
+      url: "http://localhost:9200"
+
