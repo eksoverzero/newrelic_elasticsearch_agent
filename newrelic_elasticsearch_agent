@@ -1,0 +1,100 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'bundler/setup'
+require 'newrelic_plugin'
+require 'net/http'
+require 'uri'
+require 'socket'
+require 'json'
+require 'awesome_print'
+
+module ElasticsearchStatsAgent
+
+  class Agent < NewRelic::Plugin::Agent::Base
+
+    agent_guid 'com.secondimpression.newrelic-agent'
+    agent_version '0.0.1'
+    agent_config_options :name, :url, :index
+    agent_human_labels('ElasticSearch') { name }
+
+    def setup_metrics
+      @requests = NewRelic::Processor::EpochCounter.new
+      @accepts = NewRelic::Processor::EpochCounter.new
+      @drops = NewRelic::Processor::EpochCounter.new
+    end
+
+    def poll_cycle
+      json = JSON.parse(get_elasticsearch_status)
+      stats = json["_all"]
+      stats = json["_all"]["indices"]["#{index}"] unless index == "_all"
+      total = stats["total"]
+
+      report_metric "Documents/Count",          "Documents",      total["docs"]["count"]
+      report_metric "Documents/Deleted",        "Documents",      total["docs"]["deleted"]
+
+      report_metric "Store/Size",               "Documents",      total["store"]["size_in_bytes"]
+      report_metric "Store/Throttle",           "time",           total["store"]["throttle_time_in_millis"]
+
+      report_metric "Indexing/Index/Current",   "Indexes",        total["indexing"]["index_current"]
+      report_metric "Indexing/Index/Total",     "Indexes",        total["indexing"]["index_total"]
+      report_metric "Indexing/Index/Time",      "time",           total["indexing"]["index_time_in_millis"]
+      report_metric "Indexing/Delete/Current",  "Deletes",        total["indexing"]["delete_current"]
+      report_metric "Indexing/Delete/Total",    "Deletes",        total["indexing"]["delete_total"]
+      report_metric "Indexing/Delete/Time",     "time",           total["indexing"]["delete_time_in_millis"]
+
+      report_metric "Get/Current",              "Queries",        total["get"]["current"]
+      report_metric "Get/Total",                "Queries",        total["get"]["total"]
+      report_metric "Get/Time",                 "time",           total["get"]["time_in_millis"]
+      report_metric "Get/Exists/Total",         "Exists",         total["get"]["exists_total"]
+      report_metric "Get/Exists/Time",          "time",           total["get"]["exists_time_in_millis"]
+      report_metric "Get/Missing/Total",        "Missing",        total["get"]["missing_total"]
+      report_metric "Get/Missing/Time",         "time",           total["get"]["missing_time_in_millis"]
+
+      report_metric "Search/Query/Current",     "Queries",        total["search"]["query_current"]
+      report_metric "Search/Query/Total",       "Queries",        total["search"]["query_total"]
+      report_metric "Search/Query/Time",        "time",           total["search"]["query_time_in_millis"]
+      report_metric "Search/Fetch/Current",     "Fetches",        total["search"]["fetch_current"]
+      report_metric "Search/Fetch/Total",       "Fetches",        total["search"]["fetch_total"]
+      report_metric "Search/Fetch/Time",        "time",           total["search"]["fetch_time_in_millis"]
+
+    end
+
+    private
+
+    def get_elasticsearch_status
+      begin
+        u = URI.parse("#{url}/#{index}/_stats")
+        r = ::Net::HTTP::Get.new(u)
+        http = ::Net::HTTP.new(u.host, u.port)
+        http.open_timeout = 5
+        http.read_timeout = 5
+        resp = http.request(r)
+      rescue Timeout::Error
+        print "ERROR while gathering stats from #{url}: connect/read timeout\n"
+        return nil
+      rescue Exception => e
+        print "ERROR while gathering stats from #{url}: #{e.message}\n"
+        return nil
+      end
+
+      if !resp.is_a?(Net::HTTPSuccess)
+        print "ERROR while gathering stats from #{url}: "
+        print "#{resp.code} #{resp.message}\n"
+        return nil
+      end
+
+      if resp.content_type != "application/json"
+        print "ERROR while parsing stats from #{url}: Excepted JSON"
+        return nil
+      end
+      return resp.body
+    end
+  end
+
+  NewRelic::Plugin::Config.config_file = File.dirname(__FILE__) + '/config/newrelic_plugin.yml'
+  NewRelic::Plugin::Setup.install_agent :elasticsearch_stats_agent, self
+
+  NewRelic::Plugin::Run.setup_and_run
+end
+
