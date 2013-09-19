@@ -37,7 +37,7 @@ module ElasticsearchStatsAgent
       report_metric "Documents/Deleted",        "Documents",      total["docs"]["deleted"]
 
       report_metric "Store/Size",               "MegaBytes",      total["store"]["size_in_bytes"] / 1024 / 1024
-      report_metric "Store/Throttle",           "Milliseconds",   total["store"]["throttle_time_in_millis"]
+      report_metric "Store/Throttle",           "Seconds",        total["store"]["throttle_time_in_millis"] / 1000
 
       report_metric "Indexing/Index/Total",     "Indexes",        total["indexing"]["index_total"]
       report_metric "Indexing/Index/Time",      "Milliseconds",   total["indexing"]["index_time_in_millis"]
