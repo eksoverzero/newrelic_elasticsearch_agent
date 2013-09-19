@@ -12,7 +12,7 @@ module ElasticsearchStatsAgent
 
   class Agent < NewRelic::Plugin::Agent::Base
 
-    agent_guid 'com.secondimpression.newrelic-agent'
+    agent_guid 'com.secondimpression.newrelic-elasticsearch-agent'
     agent_version '0.0.1'
     agent_config_options :name, :url, :index
     agent_human_labels('ElasticSearch') { name }
