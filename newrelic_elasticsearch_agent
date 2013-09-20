@@ -69,7 +69,7 @@ module ElasticsearchStatsAgent
     def get_elasticsearch_status
       begin
         u = URI.parse("#{url}/#{index}/_stats")
-        r = ::Net::HTTP::Get.new(u)
+        r = ::Net::HTTP::Get.new(u.path)
         http = ::Net::HTTP.new(u.host, u.port)
         http.open_timeout = 5
         http.read_timeout = 5
