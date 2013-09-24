@@ -15,7 +15,10 @@ newrelic:
 agents:
   elasticsearch_stats_agent:
     -
-      name: "local"
-      index: "index name"
+      # Application name
+      name: "Application name"
+      # Index name
+      # using "_all" with provide stats for all indices
+      index: "index_name"
       url: "http://localhost:9200"
 

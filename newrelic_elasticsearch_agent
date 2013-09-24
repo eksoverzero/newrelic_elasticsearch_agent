@@ -28,40 +28,54 @@ module ElasticsearchStatsAgent
     end
 
     def poll_cycle
+      unless get_elasticsearch_status
+        return nil
+      end
+
       json = JSON.parse(get_elasticsearch_status)
       stats = json["_all"]
       stats = json["_all"]["indices"]["#{index}"] unless index == "_all"
-      total = stats["total"]
+      total = stats["total"] ||= Hash.new
 
-      report_metric "Documents/Count",          "Documents",      total["docs"]["count"]
-      report_metric "Documents/Deleted",        "Documents",      total["docs"]["deleted"]
+      if total["docs"]
+        report_metric "Documents/Count",          "Documents",        total["docs"]["count"]                                              if total["docs"]["count"]
+        report_metric "Documents/Deleted",        "Documents",        total["docs"]["deleted"]                                            if total["docs"]["deleted"]
+      end
 
-      report_metric "Store/Size",               "MegaBytes",      total["store"]["size_in_bytes"] / 1024 / 1024
-      report_metric "Store/Throttle",           "Seconds",        total["store"]["throttle_time_in_millis"] / 1000
+      if total["store"]
+        report_metric "Store/Size",               "MegaBytes",        total["store"]["size_in_bytes"] / 1024 / 1024                       if total["store"]["size_in_bytes"]
+        report_metric "Store/Throttle",           "Seconds",          total["store"]["throttle_time_in_millis"] / 1000                    if total["store"]["throttle_time_in_millis"]
+      end
 
-      report_metric "Indexing/Index/Total",     "Indexes",        total["indexing"]["index_total"]
-      report_metric "Indexing/Index/Time",      "Milliseconds",   total["indexing"]["index_time_in_millis"]
-      report_metric "Indexing/Index/Rate",      "Indexes/sec",    @indexing_index_rate.process(total["indexing"]["index_total"])
-      report_metric "Indexing/Delete/Total",    "Deletes",        total["indexing"]["delete_total"]
-      report_metric "Indexing/Delete/Time",     "Milliseconds",   total["indexing"]["delete_time_in_millis"]
-      report_metric "Indexing/Delete/Rate",     "Deletes/sec",    @indexing_delete_rate.process(total["indexing"]["delete_total"])
+      if total["indexing"]
+        report_metric "Indexing/Index/Total",     "Indexes",          total["indexing"]["index_total"]                                    if total["indexing"]["index_total"]
+        report_metric "Indexing/Index/Time",      "Milliseconds",     total["indexing"]["index_time_in_millis"]                           if total["indexing"]["index_time_in_millis"]
+        report_metric "Indexing/Index/Rate",      "Indexes/sec",      @indexing_index_rate.process(total["indexing"]["index_total"])      if total["indexing"]["index_total"]
+        report_metric "Indexing/Delete/Total",    "Deletes",          total["indexing"]["delete_total"]                                   if total["indexing"]["delete_total"]
+        report_metric "Indexing/Delete/Time",     "Milliseconds",     total["indexing"]["delete_time_in_millis"]                          if total["indexing"]["delete_time_in_millis"]
+        report_metric "Indexing/Delete/Rate",     "Deletes/sec",      @indexing_delete_rate.process(total["indexing"]["delete_total"])    if total["indexing"]["delete_total"]
+      end
 
-      report_metric "Get/Total",                "Queries",        total["get"]["total"]
-      report_metric "Get/Time",                 "Milliseconds",   total["get"]["time_in_millis"]
-      report_metric "Get/Rate",                 "Queries/sec",    @get_rate.process(total["get"]["total"])
-      report_metric "Get/Exists/Total",         "Exists",         total["get"]["exists_total"]
-      report_metric "Get/Exists/Time",          "Milliseconds",   total["get"]["exists_time_in_millis"]
-      report_metric "Get/Exists/Rate",          "Exists/sec",     @get_exists_rate.process(total["get"]["exists_total"])
-      report_metric "Get/Missing/Total",        "Missing",        total["get"]["missing_total"]
-      report_metric "Get/Missing/Time",         "Milliseconds",   total["get"]["missing_time_in_millis"]
-      report_metric "Get/Missing/Rate",         "Missing/sec",    @get_missing_rate.process(total["get"]["missing_total"])
+      if total["get"]
+        report_metric "Get/Total",                "Queries",          total["get"]["total"]                                               if total["get"]["total"]
+        report_metric "Get/Time",                 "Milliseconds",     total["get"]["time_in_millis"]                                      if total["get"]["time_in_millis"]
+        report_metric "Get/Rate",                 "Queries/sec",      @get_rate.process(total["get"]["total"])                            if total["get"]["total"]
+        report_metric "Get/Exists/Total",         "Exists",           total["get"]["exists_total"]                                        if total["get"]["exists_total"]
+        report_metric "Get/Exists/Time",          "Milliseconds",     total["get"]["exists_time_in_millis"]                               if total["get"]["exists_time_in_millis"]
+        report_metric "Get/Exists/Rate",          "Exists/sec",       @get_exists_rate.process(total["get"]["exists_total"])              if total["get"]["exists_total"]
+        report_metric "Get/Missing/Total",        "Missing",          total["get"]["missing_total"]                                       if total["get"]["missing_total"]
+        report_metric "Get/Missing/Time",         "Milliseconds",     total["get"]["missing_time_in_millis"]                              if total["get"]["missing_time_in_millis"]
+        report_metric "Get/Missing/Rate",         "Missing/sec",      @get_missing_rate.process(total["get"]["missing_total"])            if total["get"]["missing_total"]
+      end
 
-      report_metric "Search/Query/Total",       "Queries",        total["search"]["query_total"]
-      report_metric "Search/Query/Time",        "Milliseconds",   total["search"]["query_time_in_millis"]
-      report_metric "Search/Query/Rate",        "Queries/sec",    @search_query_rate.process(total["search"]["query_total"])
-      report_metric "Search/Fetch/Total",       "Fetches",        total["search"]["fetch_total"]
-      report_metric "Search/Fetch/Time",        "Milliseconds",   total["search"]["fetch_time_in_millis"]
-      report_metric "Search/Fetch/Rate",        "Fetches/sec",    @search_fetch_rate.process(total["search"]["fetch_total"])
+      if total["search"]
+        report_metric "Search/Query/Total",       "Queries",          total["search"]["query_total"]                                      if total["search"]["query_total"]
+        report_metric "Search/Query/Time",        "Milliseconds",     total["search"]["query_time_in_millis"]                             if total["search"]["query_time_in_millis"]
+        report_metric "Search/Query/Rate",        "Queries/sec",      @search_query_rate.process(total["search"]["query_total"])          if total["search"]["query_total"]
+        report_metric "Search/Fetch/Total",       "Fetches",          total["search"]["fetch_total"]                                      if total["search"]["fetch_total"]
+        report_metric "Search/Fetch/Time",        "Milliseconds",     total["search"]["fetch_time_in_millis"]                             if total["search"]["fetch_time_in_millis"]
+        report_metric "Search/Fetch/Rate",        "Fetches/sec",      @search_fetch_rate.process(total["search"]["fetch_total"])          if total["search"]["fetch_total"]
+      end
     end
 
     private
