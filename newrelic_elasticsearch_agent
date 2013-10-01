@@ -33,8 +33,12 @@ module ElasticsearchStatsAgent
       end
 
       json = JSON.parse(get_elasticsearch_status)
-      stats = json["_all"]
-      stats = json["_all"]["indices"]["#{index}"] unless index == "_all"
+      if index == "_all"
+        stats = json["_all"]
+      else
+        stats = json["indices"]["#{index}"] if json.has_key?("indices")
+        stats = json["_all"]["indices"]["#{index}"] if json["_all"].has_key?("indices")
+      end
       total = stats["total"] ||= Hash.new
 
       if total["docs"]
