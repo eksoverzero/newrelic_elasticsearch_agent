@@ -51,3 +51,19 @@ check process newrelic_elasticsearch_agent
   if totalmem is greater than 250 MB for 2 cycles then restart
   group newrelic_agent
 ```
+
+### Supervisord example
+
+```
+[program:newrelic_elasticsearch]
+command = bash -c ./newrelic_elasticsearch_agent
+directory = /opt/newrelic_elasticsearch_agent
+autostart = true
+autorestart = true
+startretries = 10
+user = root
+startsecs = 10
+redirect_stderr = true
+stdout_logfile_maxbytes = 50MB
+stopwaitsecs = 10
+```
