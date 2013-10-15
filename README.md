@@ -17,7 +17,7 @@ software components installed:
 1. run `bundle install` to install required gems
 2. Copy `config/newrelic_plugin.yml.example` to `config/newrelic_plugin.yml`
 3. Edit `config/newrelic_plugin.yml` and replace "YOUR_LICENSE_KEY_HERE" with your New Relic license key
-4. Edit the `config/newrelic_plugin.yml` file and add Redis connection string
+4. Edit the `config/newrelic_plugin.yml` file and add Elasticsearch connection string
 5. Running the plugin
 
 In order to check your configuration, you can launch the plugin
