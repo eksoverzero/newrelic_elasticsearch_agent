@@ -8,6 +8,16 @@ newrelic:
   # All output goes to stdout/stderr.
   #
   verbose: 1
+  #
+  # Update with your proxy information (optional) for 
+  # communicating with new relic servers if you are behind 
+  # a firewall. 
+  # 
+  #proxy:
+  #  address: ''
+  #  port: 
+  #  user: 
+  #  password:
 
 #
 # Agent Configuration, describe your nginx instances here
