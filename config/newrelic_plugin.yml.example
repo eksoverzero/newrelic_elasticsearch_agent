@@ -30,5 +30,11 @@ agents:
       # Index name
       # using "_all" with provide stats for all indices
       index: "index_name"
+
+      # Username and password for Http Basic Auth
+      # Leave empty if not used
+      username: ""
+      password: ""
+      
       url: "http://localhost:9200"
 
