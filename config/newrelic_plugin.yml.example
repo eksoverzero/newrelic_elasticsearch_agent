@@ -27,14 +27,14 @@ agents:
     -
       # Application name
       name: "Application name"
+
+      url: "http://localhost:9200"
+
+      # Username and password for HTTP basic auth
+      # username: ""
+      # password: ""
+
       # Index name
       # using "_all" with provide stats for all indices
-      index: "index_name"
-
-      # Username and password for Http Basic Auth
-      # Leave empty if not used
-      username: ""
-      password: ""
-      
-      url: "http://localhost:9200"
+      index: "_all"
 

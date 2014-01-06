@@ -89,7 +89,7 @@ module ElasticsearchStatsAgent
         u = URI.parse("#{url}/#{index}/_stats")
         r = ::Net::HTTP::Get.new(u.path)
 
-        if username.to_s != ''
+        unless username.to_s.empty?
           r.basic_auth username, password
         end
 
