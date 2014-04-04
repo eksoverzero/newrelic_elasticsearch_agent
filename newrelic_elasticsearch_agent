@@ -89,9 +89,8 @@ module ElasticsearchStatsAgent
         u = URI.parse("#{url}/#{index}/_stats")
         r = ::Net::HTTP::Get.new(u.path)
 
-        unless username.to_s.empty?
-          r.basic_auth username, password
-        end
+        r.use_ssl = true if u.scheme.casecmp("https") == 0
+        r.basic_auth(username, password) unless username.to_s.empty?
 
         http = ::Net::HTTP.new(u.host, u.port)
         http.open_timeout = 5
