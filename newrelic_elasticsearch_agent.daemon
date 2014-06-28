@@ -5,4 +5,3 @@ require 'bundler/setup'
 require 'daemons'
 
 Daemons.run(File.dirname(Pathname.new(__FILE__).realpath) + '/newrelic_elasticsearch_agent')
-

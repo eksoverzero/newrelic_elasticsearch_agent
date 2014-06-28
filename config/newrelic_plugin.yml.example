@@ -9,14 +9,14 @@ newrelic:
   #
   verbose: 1
   #
-  # Update with your proxy information (optional) for 
-  # communicating with new relic servers if you are behind 
-  # a firewall. 
-  # 
+  # Update with your proxy information (optional) for
+  # communicating with new relic servers if you are behind
+  # a firewall.
+  #
   #proxy:
   #  address: ''
-  #  port: 
-  #  user: 
+  #  port:
+  #  user:
   #  password:
 
 #
@@ -37,4 +37,3 @@ agents:
       # Index name
       # using "_all" with provide stats for all indices
       index: "_all"
-
