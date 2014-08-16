@@ -19,21 +19,18 @@ newrelic:
   #  user:
   #  password:
 
-#
-# Agent Configuration, describe your nginx instances here
-#
 agents:
-  elasticsearch_stats_agent:
+  elasticsearch:
     -
       # Application name
-      name: "Application name"
+      name: 'Application name'
 
-      url: "http://localhost:9200"
+      url: 'http://localhost:9200'
 
       # Username and password for HTTP basic auth
-      # username: ""
-      # password: ""
+      # username: ''
+      # password: ''
 
       # Index name
-      # using "_all" with provide stats for all indices
-      index: "_all"
+      # using '_all' with provide stats for all indices
+      index: '_all'
