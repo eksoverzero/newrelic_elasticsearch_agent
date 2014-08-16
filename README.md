@@ -12,18 +12,24 @@ software components installed:
   - Ruby (>= 1.8.7)
   - bundler for Ruby: https://github.com/carlhuda/bundler
 
-### Instructions for running the Elastic plugin agent
+### Upgrading
+
+Please check `config/newrelic_plugin.yml.example` for any changes
+
+### Instructions for running the Elasticsearch plugin agent
 
 1. run `bundle install` to install required gems
 2. Copy `config/newrelic_plugin.yml.example` to `config/newrelic_plugin.yml`
-3. Edit `config/newrelic_plugin.yml` and replace "YOUR_LICENSE_KEY_HERE" with your New Relic license key
-4. Edit the `config/newrelic_plugin.yml` file and add Elasticsearch connection string
+3. Edit `config/newrelic_plugin.yml` and replace `YOUR_LICENSE_KEY_HERE` with your New Relic license key
+4. Edit the `config/newrelic_plugin.yml` file and add Elasticsearch URL
 5. Running the plugin
 
 In order to check your configuration, you can launch the plugin
 in foreground mode, with all output going to stdout:
 
-  ./newrelic_elasticsearch_agent
+```
+./newrelic_elasticsearch_agent
+```
 
 Carefully check plugin's output for any possible error messages.
 In case of success, collected data should appear in the New Relic
@@ -31,19 +37,26 @@ user interface shortly after starting.
 
 Plugin can also be started as a daemon using the following command:
 
-  ./newrelic_elasticsearch_agent.daemon start
+```
+./newrelic_elasticsearch_agent.daemon start
+```
 
-In this case you can check its status by running
+In this case you can check its status by running:
 
-  ./newrelic_elasticsearch_agent.daemon status
+```
+./newrelic_elasticsearch_agent.daemon status
+```
 
-and stop it with
+The daemon can be stopped by running:
 
-  ./newrelic_elasticsearch_agent.daemon stop
+```
+./newrelic_elasticsearch_agent.daemon stop
+```
 
 ### Monit example
 
 ```
+# /etc/monit/conf.d/newrelic_elasticsearch_agent.conf
 check process newrelic_elasticsearch_agent
   with pidfile /home/ubuntu/newrelic_elasticsearch_agent/newrelic_elasticsearch_agent.pid
   start program = "/bin/su - ubuntu -c '/home/ubuntu/newrelic_elasticsearch_agent/newrelic_elasticsearch_agent.daemon start'" with timeout 90 seconds
@@ -55,13 +68,13 @@ check process newrelic_elasticsearch_agent
 ### Supervisord example
 
 ```
-[program:newrelic_elasticsearch]
+[program:newrelic_elasticsearch_agent]
 command = bash -c ./newrelic_elasticsearch_agent
-directory = /opt/newrelic_elasticsearch_agent
+directory = /home/ubuntu/newrelic_elasticsearch_agent
 autostart = true
 autorestart = true
 startretries = 10
-user = root
+user = ubuntu
 startsecs = 10
 redirect_stderr = true
 stdout_logfile_maxbytes = 50MB
