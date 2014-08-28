@@ -15,74 +15,104 @@ module NewRelic::Elasticsearch
     agent_human_labels('ElasticSearch') { name }
 
     def setup_metrics
-      @indexing_index_rate  = NewRelic::Processor::EpochCounter.new
-      @indexing_delete_rate = NewRelic::Processor::EpochCounter.new
-      @get_rate             = NewRelic::Processor::EpochCounter.new
-      @get_exists_rate      = NewRelic::Processor::EpochCounter.new
-      @get_missing_rate     = NewRelic::Processor::EpochCounter.new
-      @search_query_rate    = NewRelic::Processor::EpochCounter.new
-      @search_fetch_rate    = NewRelic::Processor::EpochCounter.new
+      @created_rate = NewRelic::Processor::EpochCounter.new
+      @deleted_rate = NewRelic::Processor::EpochCounter.new
+
+      @store_time = NewRelic::Processor::EpochCounter.new
+      @store_rate = NewRelic::Processor::EpochCounter.new
+
+      @index_time  = NewRelic::Processor::EpochCounter.new
+      @index_rate  = NewRelic::Processor::EpochCounter.new
+      @delete_time = NewRelic::Processor::EpochCounter.new
+      @delete_rate = NewRelic::Processor::EpochCounter.new
+
+      @get_time     = NewRelic::Processor::EpochCounter.new
+      @get_rate     = NewRelic::Processor::EpochCounter.new
+      @exists_time  = NewRelic::Processor::EpochCounter.new
+      @exists_rate  = NewRelic::Processor::EpochCounter.new
+      @missing_time = NewRelic::Processor::EpochCounter.new
+      @missing_rate = NewRelic::Processor::EpochCounter.new
+
+      @query_time = NewRelic::Processor::EpochCounter.new
+      @query_rate = NewRelic::Processor::EpochCounter.new
+      @fetch_time = NewRelic::Processor::EpochCounter.new
+      @fetch_rate = NewRelic::Processor::EpochCounter.new
+
+      @refresh_time = NewRelic::Processor::EpochCounter.new
+      @refresh_rate = NewRelic::Processor::EpochCounter.new
+
+      @flush_time = NewRelic::Processor::EpochCounter.new
+      @flush_rate = NewRelic::Processor::EpochCounter.new
     end
 
     def poll_cycle
-      unless index_stats
-        return nil
-      end
+      index_stats = JSON.parse( get_index_stats ) if get_index_stats
+      if index_stats
+        if index == '_all'
+          index_stats = index_stats['_all']['total'] if index_stats['_all']
+        else
+          index_stats = index_stats['indices']["#{index}"]['total'] if index_stats['indices']["#{index}"]
+        end
 
-      json = JSON.parse index_stats
-
-      if index == '_all'
-        stats = json['_all']
-      else
-        stats = json['indices']["#{index}"] if json.has_key?('indices')
-        stats = json['_all']['indices']["#{index}"] if json["_all"].has_key?('indices')
-      end
-      total = stats['total'] ||= Hash.new
-
-      if total['docs']
-        report_metric 'Documents/Count',   'Documents', total['docs']['count'] || 0
-        report_metric 'Documents/Deleted', 'Documents', total['docs']['deleted'] || 0
-      end
-
-      if total['store']
-        report_metric 'Store/Size',     'Megabytes',    total['store']['size_in_bytes'] || 0
-        report_metric 'Store/Throttle', 'Milliseconds', total["store"]["throttle_time_in_millis"] || 0
-      end
-
-      if total['indexing']
-        report_metric 'Indexing/Index/Total',  'Indexes',      total['indexing']['index_total'] || 0
-        report_metric 'Indexing/Index/Time',   'Milliseconds', total['indexing']['index_time_in_millis'] || 0
-        report_metric 'Indexing/Index/Rate',   'Indexes/sec',  @indexing_index_rate.process( total['indexing']['index_total'] || 0 )
-        report_metric 'Indexing/Delete/Total', 'Deletes',      total['indexing']['delete_total'] || 0
-        report_metric 'Indexing/Delete/Time',  'Milliseconds', total['indexing']['delete_time_in_millis'] || 0
-        report_metric 'Indexing/Delete/Rate',  'Deletes/sec',  @indexing_delete_rate.process( total['indexing']['delete_total'] || 0 )
-      end
-
-      if total['get']
-        report_metric 'Get/Total',         'Queries',      total['get']['total'] || 0
-        report_metric 'Get/Time',          'Milliseconds', total['get']['time_in_millis'] || 0
-        report_metric 'Get/Rate',          'Queries/sec',  @get_rate.process( total['get']['total'] ) || 0
-        report_metric 'Get/Exists/Total',  'Exists',       total['get']['exists_total'] || 0
-        report_metric 'Get/Exists/Time',   'Milliseconds', total['get']['exists_time_in_millis'] || 0
-        report_metric 'Get/Exists/Rate',   'Queries/sec',  @get_exists_rate.process( total['get']['exists_total'] || 0 )
-        report_metric 'Get/Missing/Total', 'Missing',      total['get']['missing_total'] || 0
-        report_metric 'Get/Missing/Time',  'Milliseconds', total['get']['missing_time_in_millis'] || 0
-        report_metric 'Get/Missing/Rate',  'Queries/sec',  @get_missing_rate.process( total['get']['missing_total'] || 0 )
-      end
-
-      if total['search']
-        report_metric 'Search/Query/Total', 'Queries',      total['search']['query_total'] || 0
-        report_metric 'Search/Query/Time',  'Milliseconds', total['search']['query_time_in_millis'] || 0
-        report_metric 'Search/Query/Rate',  'Queries/sec',  @search_query_rate.process( total['search']['query_total'] || 0 )
-        report_metric 'Search/Fetch/Total', 'Fetches',      total['search']['fetch_total'] || 0
-        report_metric 'Search/Fetch/Time',  'Milliseconds', total['search']['fetch_time_in_millis'] || 0
-        report_metric 'Search/Fetch/Rate',  'Fetches/sec',  @search_fetch_rate.process( total['search']['fetch_total'] || 0 )
+        report_index(index_stats) if index_stats
       end
     end
 
     private
 
-    def index_stats
+    def report_index stats
+      if stats['docs']
+        report_metric 'Documented/Total', 'Documents', stats['docs']['count'] || 0
+
+        report_metric 'Created/Rate', 'Documents/sec', @created_rate.process( stats['docs']['count'] || 0 )
+        report_metric 'Deleted/Rate', 'Documents/sec', @deleted_rate.process( stats['docs']['deleted'] || 0 )
+      end
+
+      if stats['store']
+        report_metric 'Store/Total', 'Bytes',        stats['store']['size_in_bytes'] || 0
+        report_metric 'Store/Time',  'Milliseconds', @store_time.process( stats['store']['size_in_bytes'] || 0 )
+        report_metric 'Store/Rate',  'Bytes/sec',    @store_rate.process( stats['store']['throttle_time_in_millis'] || 0 )
+      end
+
+      if stats['indexing']
+        report_metric 'Index/Index/Time', 'Milliseconds', @index_time.process( stats['indexing']['index_time_in_millis'] || 0 )
+        report_metric 'Index/Index/Rate', 'Queries/sec',  @index_rate.process( stats['indexing']['index_total'] || 0 )
+
+        report_metric 'Index/Delete/Time', 'Milliseconds', @delete_time.process( stats['indexing']['delete_time_in_millis'] || 0 )
+        report_metric 'Index/Delete/Rate', 'Queries/sec',  @delete_rate.process( stats['indexing']['delete_total'] || 0 )
+      end
+
+      if stats['get']
+        report_metric 'Index/Get/Time', 'Milliseconds', @get_time.process( stats['get']['time_in_millis'] || 0 )
+        report_metric 'Index/Get/Rate', 'Queries/sec',  @get_rate.process( stats['get']['total'] ) || 0
+
+        report_metric 'Index/Exists/Time', 'Milliseconds', @exists_time.process( stats['get']['exists_time_in_millis'] || 0 )
+        report_metric 'Index/Exists/Rate', 'Queries/sec',  @exists_rate.process( stats['get']['exists_total'] || 0 )
+
+        report_metric 'Index/Missing/Time', 'Milliseconds', @missing_time.process( stats['get']['missing_time_in_millis'] || 0 )
+        report_metric 'Index/Missing/Rate', 'Queries/sec',  @missing_rate.process( stats['get']['missing_total'] || 0 )
+      end
+
+      if stats['search']
+        report_metric 'Index/Query/Time', 'Milliseconds', @query_time.process( stats['search']['query_time_in_millis'] || 0 )
+        report_metric 'Index/Query/Rate', 'Queries/sec',  @query_rate.process( stats['search']['query_total'] || 0 )
+
+        report_metric 'Index/Fetch/Time', 'Milliseconds', @fetch_time.process( stats['search']['fetch_time_in_millis'] || 0 )
+        report_metric 'Index/Fetch/Rate', 'Queries/sec',  @fetch_rate.process( stats['search']['fetch_total'] || 0 )
+      end
+
+      if stats['refresh']
+        report_metric 'Index/Refresh/Time', 'Milliseconds',  @refresh_time.process( stats['refresh']['total'] || 0 )
+        report_metric 'Index/Refresh/Rate', 'Queries/sec', @refresh_rate.process( stats['refresh']['total_time_in_millis'] || 0 )
+      end
+
+      if stats['flush']
+        report_metric 'Index/Flush/Time', 'Milliseconds', @flush_time.process( stats['flush']['total'] || 0 )
+        report_metric 'Index/Flush/Rate', 'Queries/sec',  @flush_rate.process( stats['flush']['total_time_in_millis'] || 0 )
+      end
+    end
+
+    def get_index_stats
       get "#{url}/#{index}/_stats"
     end
 
