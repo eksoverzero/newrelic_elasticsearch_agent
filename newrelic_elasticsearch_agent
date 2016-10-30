@@ -119,14 +119,15 @@ module NewRelic::Elasticsearch
     def get url
       begin
         uri     = URI.parse url
-        request = ::Net::HTTP::Get.new uri.path
-
-        request.use_ssl = true if uri.scheme.casecmp('https') == 0
-        request.basic_auth(username, password) unless username.to_s.empty?
 
         http = ::Net::HTTP.new uri.host, uri.port
         http.open_timeout = 5
         http.read_timeout = 5
+        http.use_ssl = true if uri.scheme.casecmp('https') == 0
+
+        request = ::Net::HTTP::Get.new uri.path
+
+        request.basic_auth(username, password) unless username.to_s.empty?
 
         response = http.request request
       rescue Timeout::Error
